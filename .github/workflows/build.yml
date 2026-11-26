@@ -1,17 +1,27 @@
 name: Build
 
 # Compile Base pour Windows (.exe / .msi) et macOS (.dmg universel Intel + Apple Silicon).
-# - À chaque push sur main : les installateurs sont dans l'onglet Actions › le run › Artifacts.
-# - Sur un tag v* (ex. v0.1.0) : un brouillon de Release GitHub est créé avec les installateurs.
+# - À chaque push sur main : installateurs dans l'onglet Actions › le run › Artifacts.
+# - Sur un tag v* (créé par `npm run release`) : une Release GitHub est publiée avec les
+#   installateurs, les paquets de mise à jour signés et latest.json. Les apps installées
+#   la détectent et proposent la mise à jour.
+#
+# Secret requis (Settings › Secrets and variables › Actions) :
+#   TAURI_SIGNING_PRIVATE_KEY : contenu du fichier base.key (clé de signature des mises à jour)
 on:
   push:
     branches: [main]
     tags: ["v*"]
-  pull_request:
   workflow_dispatch:
 
 permissions:
   contents: write
+
+env:
+  # Dépôt où l'app ira chercher ses mises à jour (fixé dans le binaire à la compilation).
+  BASE_UPDATE_REPO: ${{ github.repository }}
+  TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+  TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
 
 jobs:
   build:
@@ -49,15 +59,35 @@ jobs:
           npm run build
           cargo test --manifest-path src-tauri/Cargo.toml
 
+      - name: Options de compilation
+        id: opts
+        shell: bash
+        env:
+          HAS_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY != '' }}
+          IS_TAG: ${{ startsWith(github.ref, 'refs/tags/v') }}
+        run: |
+          args="${{ matrix.args }}"
+          if [ "$HAS_KEY" = "true" ]; then
+            args="$args --config src-tauri/tauri.updater.conf.json"
+          elif [ "$IS_TAG" = "true" ]; then
+            echo "::error::Le secret TAURI_SIGNING_PRIVATE_KEY est requis pour publier une version."
+            exit 1
+          else
+            echo "::warning::Secret TAURI_SIGNING_PRIVATE_KEY absent : pas de paquets de mise à jour."
+          fi
+          echo "args=$args" >> "$GITHUB_OUTPUT"
+
       - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          args: ${{ matrix.args }}
+          args: ${{ steps.opts.outputs.args }}
           tagName: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || '' }}
           releaseName: "Base ${{ github.ref_name }}"
-          releaseBody: "Installateurs Windows et macOS. Voir le README pour le premier lancement."
-          releaseDraft: true
+          releaseBody: "Mise à jour disponible directement depuis l'app (bouton « Mettre à jour »). Première installation : voir le README."
+          releaseDraft: false
+          includeUpdaterJson: true
+          updaterJsonPreferNsis: true
 
       - uses: actions/upload-artifact@v4
         with:

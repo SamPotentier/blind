@@ -3,6 +3,7 @@ import { listen } from "@tauri-apps/api/event";
 import { api, type Config, type Item, type Note, type Platform, type ProjectInfo } from "./api";
 import { AppCtx, Icon, type Ctx, type View } from "./components";
 import { colorFor, prettyShortcut } from "./util";
+import { UpdateCard, useUpdater } from "./update";
 import Search from "./views/Search";
 import Home from "./views/Home";
 import Library from "./views/Library";
@@ -48,6 +49,8 @@ export default function App() {
     setToast({ msg, error });
     toastTimer.current = window.setTimeout(() => setToast(null), error ? 4500 : 2200);
   }, []);
+
+  const updater = useUpdater((msg) => showToast(msg, true));
 
   const reloadItems = useCallback(async (refresh = false) => setItems(await api.getItems(refresh)), []);
   const reloadProjects = useCallback(async () => setProjects(await api.projectInfos()), []);
@@ -139,8 +142,9 @@ export default function App() {
       reloadItems,
       reloadProjects,
       reloadNotes,
+      updater,
     };
-  }, [config, platform, items, projects, notes, update, showToast, reloadItems, reloadProjects, reloadNotes]);
+  }, [config, platform, items, projects, notes, update, showToast, reloadItems, reloadProjects, reloadNotes, updater]);
 
   if (!ctx || !config) return <div className="app" />;
 
@@ -206,6 +210,7 @@ export default function App() {
                 <Icon name="settings" />
                 Réglages
               </button>
+              <UpdateCard state={updater} />
               <div className="side-status">
                 <b>
                   <span className="dot" style={{ background: config.launch_at_startup ? "var(--ok)" : "var(--line-2)" }} />

@@ -28,7 +28,14 @@
   },
   "bundle": {
     "active": true,
-    "targets": ["nsis", "msi", "dmg", "app", "deb", "appimage"],
+    "targets": [
+      "nsis",
+      "msi",
+      "dmg",
+      "app",
+      "deb",
+      "appimage"
+    ],
     "category": "Productivity",
     "shortDescription": "Lanceur d'apps, de jeux, de projets et de notes qui remplace le bureau",
     "icon": [
@@ -39,11 +46,26 @@
       "icons/icon.ico"
     ],
     "windows": {
-      "nsis": { "languages": ["French", "English"], "installMode": "currentUser" }
+      "nsis": {
+        "languages": [
+          "French",
+          "English"
+        ],
+        "installMode": "currentUser"
+      }
     },
     "macOS": {
       "signingIdentity": "-",
       "minimumSystemVersion": "11.0"
+    }
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEZERjUxMEE2QUQ3RTkyNUQKUldSZGtuNnRwaEQxL2E2a1daZXJDaVZsRVdiMnN4ZFBkQVExbEZaR1BCRTVFNWdwbExodkE3aEYK",
+      "endpoints": [],
+      "windows": {
+        "installMode": "passive"
+      }
     }
   }
 }

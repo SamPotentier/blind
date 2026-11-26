@@ -3,6 +3,7 @@ mod files;
 mod items;
 mod notes;
 mod system;
+mod updater;
 
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
@@ -272,6 +273,8 @@ pub fn run() {
         // Doit être le premier plugin : une 2e instance réaffiche la première.
         .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| show_main(app)))
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
+        .manage(updater::Pending::default())
         .plugin(tauri_plugin_autostart::init(
             MacosLauncher::LaunchAgent,
             Some(vec!["--autostart"]),
@@ -299,6 +302,8 @@ pub fn run() {
             if let Err(e) = apply_shortcut(&handle, &cfg.shortcut) {
                 eprintln!("{e}");
             }
+
+            updater::start_background_checks(handle.clone());
 
             let index = Arc::new(files::FileIndex::default());
             index.rebuild(cfg.indexed_folders.clone());
@@ -378,6 +383,9 @@ pub fn run() {
             project_infos,
             set_desktop_icons_hidden,
             hide_window,
+            updater::version_info,
+            updater::check_update,
+            updater::install_update,
         ])
         .run(tauri::generate_context!())
         .expect("erreur au lancement de Base");

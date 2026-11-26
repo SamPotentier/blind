@@ -36,6 +36,30 @@ L'app n'est pas signée par un certificat payant. Au premier lancement :
   xattr -cr /Applications/Base.app
   ```
 
+## Mises à jour
+
+Base vérifie s'il existe une nouvelle version au démarrage, puis toutes les 6 heures. Si c'est le cas, un bouton **Mettre à jour** apparaît en bas du menu de gauche (et dans Réglages › Version). Un clic télécharge la mise à jour, l'installe et relance l'app.
+
+### Mise en place (une seule fois)
+
+1. Le dépôt GitHub doit être **public** : l'app télécharge les mises à jour depuis ses Releases, sans compte.
+2. Dans le dépôt : *Settings › Secrets and variables › Actions › New repository secret*
+   - nom : `TAURI_SIGNING_PRIVATE_KEY`
+   - valeur : le contenu du fichier `base.key` (la clé privée de signature).
+
+   Cette clé garantit que seules vos mises à jour sont acceptées par l'app. **Ne la commitez jamais** et gardez-en une copie : si vous la perdez, les apps déjà installées ne pourront plus se mettre à jour (il faudra réinstaller à la main). La clé publique correspondante est dans `src-tauri/tauri.conf.json` (`plugins.updater.pubkey`).
+
+### Publier une nouvelle version
+
+```bash
+npm run release            # 0.1.0 → 0.1.1
+npm run release -- minor   # 0.1.0 → 0.2.0
+```
+
+Le script change le numéro de version, crée le commit et le tag `vX.Y.Z`, puis pousse. GitHub Actions compile Windows et macOS (une dizaine de minutes) et publie la Release : les apps installées proposent alors la mise à jour.
+
+Une version compilée localement (`npm run tauri build`) ne vérifie pas les mises à jour : seules les versions produites par GitHub Actions savent où les chercher.
+
 ## Développement
 
 Il faut [Node.js](https://nodejs.org) 20+ et [Rust](https://rustup.rs), plus les [prérequis Tauri](https://tauri.app/start/prerequisites/) de votre système.
@@ -55,5 +79,6 @@ Organisation :
   - `files.rs` : index de recherche des fichiers.
   - `notes.rs` : notes Markdown.
   - `system.rs` : lancement des apps, ouverture des dossiers, éditeur, terminal, icônes du bureau.
+  - `updater.rs` : vérification, téléchargement et installation des mises à jour.
   - `lib.rs` : fenêtre, icône de la zone de notification, raccourci global, lancement au démarrage.
 - Réglages enregistrés dans `config.json` du dossier de configuration de l'app (`%APPDATA%\app.base.launcher` sous Windows, `~/Library/Application Support/app.base.launcher` sous macOS).

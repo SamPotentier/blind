@@ -34,6 +34,8 @@ export type Config = {
 export type Note = { id: string; title: string; body: string; modified: number };
 export type FileHit = { name: string; path: string; is_dir: boolean };
 export type Platform = { os: "windows" | "macos" | "linux" | string; home: string; sep: string };
+export type UpdateInfo = { version: string; current: string; notes: string | null };
+export type VersionInfo = { version: string; updates_enabled: boolean; pending: UpdateInfo | null };
 export type IndexStatus = { count: number; indexing: boolean };
 
 export const api = {
@@ -55,4 +57,7 @@ export const api = {
   projectInfos: () => invoke<ProjectInfo[]>("project_infos"),
   setDesktopIconsHidden: (hidden: boolean) => invoke<Config>("set_desktop_icons_hidden", { hidden }),
   hideWindow: () => invoke<void>("hide_window"),
+  versionInfo: () => invoke<VersionInfo>("version_info"),
+  checkUpdate: () => invoke<UpdateInfo | null>("check_update"),
+  installUpdate: () => invoke<void>("install_update"),
 };

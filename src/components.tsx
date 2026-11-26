@@ -1,6 +1,7 @@
 import { createContext, useContext, type ReactNode } from "react";
 import type { Config, Item, Note, Platform, ProjectInfo } from "./api";
 import { colorFor, initials, SOURCE_LABEL } from "./util";
+import type { UpdateState } from "./update";
 
 export type View = "home" | "apps" | "games" | "projects" | "notes" | "files" | "settings";
 
@@ -20,6 +21,7 @@ export type Ctx = {
   reloadItems: (refresh?: boolean) => Promise<void>;
   reloadProjects: () => Promise<void>;
   reloadNotes: () => Promise<Note[]>;
+  updater: UpdateState;
 };
 
 export const AppCtx = createContext<Ctx | null>(null);

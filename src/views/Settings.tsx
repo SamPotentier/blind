@@ -40,6 +40,50 @@ function ShortcutRecorder() {
   );
 }
 
+function VersionCard() {
+  const ctx = useApp();
+  const { version, available, progress, check, install } = ctx.updater;
+  const [checking, setChecking] = useState(false);
+  if (!version) return null;
+  const onCheck = async () => {
+    setChecking(true);
+    try {
+      const found = await check();
+      ctx.toast(found ? `Version ${found.version} disponible` : "Base est à jour");
+    } catch (e) {
+      ctx.toast(String(e), true);
+    }
+    setChecking(false);
+  };
+  return (
+    <div className="card" style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+      <h2>Version</h2>
+      <Setting
+        title={`Base ${version.version}`}
+        hint={
+          !version.updates_enabled
+            ? "Mises à jour automatiques désactivées : version compilée localement."
+            : available
+              ? `La version ${available.version} est prête à être installée.`
+              : "Les mises à jour sont vérifiées au démarrage puis toutes les 6 heures."
+        }
+      >
+        {available ? (
+          <button className="btn primary" disabled={progress !== null} onClick={install}>
+            {progress !== null ? "Installation…" : "Mettre à jour"}
+          </button>
+        ) : (
+          <button className="btn" disabled={!version.updates_enabled || checking} onClick={onCheck}>
+            <Icon name="refresh" size={16} />
+            {checking ? "Vérification…" : "Vérifier"}
+          </button>
+        )}
+      </Setting>
+      {available?.notes && <p className="small muted" style={{ margin: 0, whiteSpace: "pre-line" }}>{available.notes}</p>}
+    </div>
+  );
+}
+
 export default function Settings() {
   const ctx = useApp();
   const { config, platform, items } = ctx;
@@ -167,6 +211,8 @@ export default function Settings() {
             </div>
           </div>
         </div>
+
+        <VersionCard />
 
         {hiddenItems.length > 0 && (
           <div className="card" style={{ display: "flex", flexDirection: "column", gap: 8 }}>
